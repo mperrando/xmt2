@@ -16,7 +16,7 @@ public class Bean2 {
 	public void setPriority(int priority) {
 		this.priority = priority;
 	}
-	
+
 	@SuppressWarnings("unused")
 	private void migrate1(VersionedDocument dom, Stack<Integer> versions) {
 		Element element = dom.getRootElement().element("prioritized");

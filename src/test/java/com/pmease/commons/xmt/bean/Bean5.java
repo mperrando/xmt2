@@ -9,9 +9,9 @@ import com.pmease.commons.xmt.VersionedDocument;
 public class Bean5 extends Bean3 {
 
 	private String loginName;
-	
+
 	private String firstName;
-	
+
 	private String lastName;
 
 	public String getLoginName() {
@@ -49,11 +49,14 @@ public class Bean5 extends Bean3 {
 			} else {
 				dom.getRootElement().addElement("firstName")
 						.setText(fullName.substring(0, index));
-				dom.getRootElement().addElement("lastName")
-						.setText(fullName.substring(index+1, fullName.length()-1));
+				dom.getRootElement()
+						.addElement("lastName")
+						.setText(
+								fullName.substring(index + 1,
+										fullName.length() - 1));
 			}
 			element.detach();
 		}
 	}
-	
+
 }

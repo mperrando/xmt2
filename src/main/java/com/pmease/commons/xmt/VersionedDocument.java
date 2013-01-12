@@ -36,11 +36,13 @@ import com.thoughtworks.xstream.io.xml.Dom4JReader;
 import com.thoughtworks.xstream.io.xml.Dom4JWriter;
 
 /**
- * This class is the bridge between bean and XML. It implements dom4j Documentation interface 
- * and can be operated with dom4j API. It also implements Serializable interface and can be 
- * serialized/deserialized in XML form.
+ * This class is the bridge between bean and XML. It implements dom4j
+ * Documentation interface and can be operated with dom4j API. It also
+ * implements Serializable interface and can be serialized/deserialized in XML
+ * form.
+ * 
  * @author robin
- *
+ * 
  */
 @SuppressWarnings("unchecked")
 public final class VersionedDocument implements Document, Serializable {
@@ -48,13 +50,13 @@ public final class VersionedDocument implements Document, Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private static SAXReader reader = new SAXReader();
-	
+
 	public static XStream xstream = new XStream();
-	
+
 	private transient String xml;
-	
+
 	private transient Document wrapped;
-	
+
 	static {
 		reader.setStripWhitespaceText(true);
 		reader.setMergeAdjacentText(true);
@@ -63,27 +65,27 @@ public final class VersionedDocument implements Document, Serializable {
 	public VersionedDocument() {
 		this.wrapped = DocumentHelper.createDocument();
 	}
-	
+
 	public VersionedDocument(Document wrapped) {
 		this.wrapped = wrapped;
 	}
-	
+
 	public void setWrapped(Document wrapped) {
 		this.wrapped = wrapped;
 		this.xml = null;
 	}
-	
+
 	public VersionedDocument(Element wrapped) {
 		wrapped.detach();
 		this.wrapped = DocumentHelper.createDocument(wrapped);
 	}
-	
+
 	public void setWrapped(Element wrapped) {
 		wrapped.detach();
 		this.wrapped = DocumentHelper.createDocument(wrapped);
 		this.xml = null;
 	}
-	
+
 	public Document addComment(String comment) {
 		return getWrapped().addComment(comment);
 	}
@@ -323,13 +325,14 @@ public final class VersionedDocument implements Document, Serializable {
 
 	public List selectNodes(String xpathExpression,
 			String comparisonXPathExpression) {
-		return getWrapped().selectNodes(xpathExpression, comparisonXPathExpression);
+		return getWrapped().selectNodes(xpathExpression,
+				comparisonXPathExpression);
 	}
 
 	public List selectNodes(String xpathExpression,
 			String comparisonXPathExpression, boolean removeDuplicates) {
-		return getWrapped().selectNodes(xpathExpression, comparisonXPathExpression, 
-				removeDuplicates);
+		return getWrapped().selectNodes(xpathExpression,
+				comparisonXPathExpression, removeDuplicates);
 	}
 
 	public Object selectObject(String xpathExpression) {
@@ -367,38 +370,39 @@ public final class VersionedDocument implements Document, Serializable {
 	public void write(Writer writer) throws IOException {
 		getWrapped().write(writer);
 	}
-	
+
 	/**
 	 * Clone this versioned document as another versioned document.
 	 */
-    public Object clone() {
-    	return new VersionedDocument((Document) getWrapped().clone());
-    }
+	public Object clone() {
+		return new VersionedDocument((Document) getWrapped().clone());
+	}
 
-    private void writeObject(ObjectOutputStream oos) throws IOException {
-    	oos.defaultWriteObject();
-    	if (xml != null)
-    		oos.writeObject(xml);
-    	else
-    		oos.writeObject(toXML());
-    }
+	private void writeObject(ObjectOutputStream oos) throws IOException {
+		oos.defaultWriteObject();
+		if (xml != null)
+			oos.writeObject(xml);
+		else
+			oos.writeObject(toXML());
+	}
 
-    private void readObject(ObjectInputStream ois) 
-    		throws ClassNotFoundException, IOException {
-    	ois.defaultReadObject();
-    	xml = (String) ois.readObject();
-    }
-    
-    /**
-     * Convert the versioned document to UTF8 encoded XML.
-     * @return
-     */
+	private void readObject(ObjectInputStream ois)
+			throws ClassNotFoundException, IOException {
+		ois.defaultReadObject();
+		xml = (String) ois.readObject();
+	}
+
+	/**
+	 * Convert the versioned document to UTF8 encoded XML.
+	 * 
+	 * @return
+	 */
 	public String toXML() {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		OutputFormat format = new OutputFormat();
 		format.setEncoding("UTF8");
 		format.setIndent(true);
-        format.setNewlines(true);
+		format.setNewlines(true);
 		try {
 			new XMLWriter(baos, format).write(getWrapped());
 			return baos.toString("UTF8");
@@ -408,16 +412,20 @@ public final class VersionedDocument implements Document, Serializable {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	/**
 	 * Construct the document from a XML text.
-	 * @param xml UTF8 encoded XML text
+	 * 
+	 * @param xml
+	 *            UTF8 encoded XML text
 	 * @return
 	 */
 	public static VersionedDocument fromXML(String xml) {
 		synchronized (reader) {
 			try {
-				return new VersionedDocument(reader.read(new ByteArrayInputStream(xml.getBytes("UTF8"))));
+				return new VersionedDocument(
+						reader.read(new ByteArrayInputStream(xml
+								.getBytes("UTF8"))));
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			} catch (DocumentException e) {
@@ -425,7 +433,7 @@ public final class VersionedDocument implements Document, Serializable {
 			}
 		}
 	}
-	
+
 	private Document getWrapped() {
 		if (wrapped == null) {
 			if (xml != null) {
@@ -435,9 +443,10 @@ public final class VersionedDocument implements Document, Serializable {
 		}
 		return wrapped;
 	}
-	
+
 	/**
 	 * Construct the versioned document from specified bean object.
+	 * 
 	 * @param bean
 	 * @return
 	 */
@@ -446,26 +455,30 @@ public final class VersionedDocument implements Document, Serializable {
 		xstream.marshal(bean, new Dom4JWriter(dom));
 		VersionedDocument versionedDom = new VersionedDocument(dom);
 		if (bean != null)
-			versionedDom.setVersion(MigrationHelper.getVersion(bean.getClass()));
+			versionedDom
+					.setVersion(MigrationHelper.getVersion(bean.getClass()));
 		return versionedDom;
 	}
-	
+
 	/**
 	 * Convert this document to bean. Migration will performed if necessary.
-	 * During the migration, content of the document will also get updated 
-	 * to reflect current migration result.
+	 * During the migration, content of the document will also get updated to
+	 * reflect current migration result.
+	 * 
 	 * @return
 	 */
 	public Object toBean() {
 		return toBean(null, null);
 	}
-	
+
 	/**
 	 * Convert this document to bean. Migration will performed if necessary.
-	 * During the migration, content of the document will also get updated 
-	 * to reflect current migration result.
-	 * @param listener the migration listener to receive migration events. Set to 
-	 * null if you do not want to receive migration events.
+	 * During the migration, content of the document will also get updated to
+	 * reflect current migration result.
+	 * 
+	 * @param listener
+	 *            the migration listener to receive migration events. Set to
+	 *            null if you do not want to receive migration events.
 	 * @return
 	 */
 	public Object toBean(MigrationListener listener) {
@@ -474,10 +487,12 @@ public final class VersionedDocument implements Document, Serializable {
 
 	/**
 	 * Convert this document to bean. Migration will performed if necessary.
-	 * During the migration, content of the document will also get updated 
-	 * to reflect current migration result.
-	 * @param beanClass class of the bean. Class information in current document 
-	 * will be used if this param is set to null
+	 * During the migration, content of the document will also get updated to
+	 * reflect current migration result.
+	 * 
+	 * @param beanClass
+	 *            class of the bean. Class information in current document will
+	 *            be used if this param is set to null
 	 * @return
 	 */
 	public Object toBean(Class<?> beanClass) {
@@ -486,29 +501,33 @@ public final class VersionedDocument implements Document, Serializable {
 
 	/**
 	 * Convert this document to bean. Migration will performed if necessary.
-	 * During the migration, content of the document will also get updated 
-	 * to reflect current migration result.
-	 * @param listener the migration listener to receive migration events. Set to 
-	 * null if you do not want to receive migration events.
-	 * @param beanClass class of the bean. Class information in current document 
-	 * will be used if this param is set to null
+	 * During the migration, content of the document will also get updated to
+	 * reflect current migration result.
+	 * 
+	 * @param listener
+	 *            the migration listener to receive migration events. Set to
+	 *            null if you do not want to receive migration events.
+	 * @param beanClass
+	 *            class of the bean. Class information in current document will
+	 *            be used if this param is set to null
 	 * @return
 	 */
-	public Object toBean(MigrationListener listener, Class<?> beanClass) {	
+	public Object toBean(MigrationListener listener, Class<?> beanClass) {
 		Dom4JReader domReader = new Dom4JReader(this);
-		Class<?> origBeanClass = HierarchicalStreams.readClassType(domReader, 
+		Class<?> origBeanClass = HierarchicalStreams.readClassType(domReader,
 				xstream.getMapper());
 		if (origBeanClass == null)
 			return null;
 		if (beanClass == null)
 			beanClass = origBeanClass;
-		else 
-			getRootElement().setName(xstream.getMapper().serializedClass(beanClass));
+		else
+			getRootElement().setName(
+					xstream.getMapper().serializedClass(beanClass));
 		if (getVersion() != null) {
 			if (MigrationHelper.migrate(getVersion(), beanClass, this)) {
 				setVersion(MigrationHelper.getVersion(beanClass));
 				Object bean = xstream.unmarshal(domReader);
-				if (listener != null) 
+				if (listener != null)
 					listener.migrated(bean);
 				return bean;
 			} else {
@@ -518,21 +537,23 @@ public final class VersionedDocument implements Document, Serializable {
 			return xstream.unmarshal(domReader);
 		}
 	}
-	
+
 	/**
 	 * Get version of the document
+	 * 
 	 * @return
 	 */
 	public String getVersion() {
 		return getRootElement().attributeValue("version");
 	}
-	
+
 	/**
 	 * Set version of the document
+	 * 
 	 * @param version
 	 */
 	public void setVersion(String version) {
 		getRootElement().addAttribute("version", version);
 	}
-	
+
 }

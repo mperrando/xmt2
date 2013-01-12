@@ -5,9 +5,9 @@ import java.util.Stack;
 import com.pmease.commons.xmt.VersionedDocument;
 
 public class Bean3 extends Bean1 {
-	
+
 	private int age;
-	
+
 	public int getAge() {
 		return age;
 	}
@@ -19,7 +19,7 @@ public class Bean3 extends Bean1 {
 	@SuppressWarnings("unused")
 	private void migrate1(VersionedDocument dom, Stack<Integer> versions) {
 	}
-	
+
 	@SuppressWarnings("unused")
 	private void migrate3(VersionedDocument dom, Stack<Integer> versions) {
 	}

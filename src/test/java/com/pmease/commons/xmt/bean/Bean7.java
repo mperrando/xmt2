@@ -9,11 +9,11 @@ import com.pmease.commons.xmt.VersionedDocument;
 public class Bean7 extends Bean1 {
 
 	private String loginName;
-	
+
 	private String firstName;
-	
+
 	private String lastName;
-	
+
 	private int age;
 
 	public String getLoginName() {
@@ -59,13 +59,16 @@ public class Bean7 extends Bean1 {
 			} else {
 				dom.getRootElement().addElement("firstName")
 						.setText(fullName.substring(0, index));
-				dom.getRootElement().addElement("lastName")
-						.setText(fullName.substring(index+1, fullName.length()-1));
+				dom.getRootElement()
+						.addElement("lastName")
+						.setText(
+								fullName.substring(index + 1,
+										fullName.length() - 1));
 			}
 			element.detach();
 		}
 	}
-	
+
 	@SuppressWarnings("unused")
 	private void migrate2(VersionedDocument dom, Stack<Integer> versions) {
 		versions.pop();

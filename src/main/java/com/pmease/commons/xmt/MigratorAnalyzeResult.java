@@ -8,17 +8,17 @@ import java.util.Map;
 
 class MigratorAnalyzeResult {
 	private Map<String, Integer> migrateVersions = new HashMap<String, Integer>();
-	
+
 	private List<Method> migrateMethods = new ArrayList<Method>();
 
 	public Map<String, Integer> getMigrateVersions() {
 		return migrateVersions;
 	}
-	
+
 	public List<Method> getMigrateMethods() {
 		return migrateMethods;
 	}
-	
+
 	public int getDataVersion() {
 		int size = migrateMethods.size();
 		if (size != 0)
@@ -26,4 +26,4 @@ class MigratorAnalyzeResult {
 		else
 			return 0;
 	}
-}	
+}

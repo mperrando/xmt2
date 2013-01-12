@@ -14,19 +14,21 @@ import com.pmease.commons.xmt.bean.Bean7;
 import com.pmease.commons.xmt.bean.CompileTask;
 
 public class XMTTest {
-	
+
 	@Test
 	public void testMigration() {
-		Bean1 bean = (Bean1) VersionedDocument.fromXML(readXML("bean1.xml")).toBean();
+		Bean1 bean = (Bean1) VersionedDocument.fromXML(readXML("bean1.xml"))
+				.toBean();
 		assertEquals(bean.getPriority(), 10);
 	}
-	
+
 	@Test
 	public void testClassRenamedMigration() {
-		Bean2 bean = (Bean2) VersionedDocument.fromXML(readXML("bean1.xml")).toBean(Bean2.class);
+		Bean2 bean = (Bean2) VersionedDocument.fromXML(readXML("bean1.xml"))
+				.toBean(Bean2.class);
 		assertEquals(bean.getPriority(), 10);
 	}
-	
+
 	@Test
 	public void testCompositeVersion() {
 		assertEquals(MigrationHelper.getVersion(Bean3.class), "1.3");
@@ -39,22 +41,25 @@ public class XMTTest {
 
 	@Test
 	public void testCompositeMigration() {
-		Bean5 bean = (Bean5) VersionedDocument.fromXML(readXML("bean2.xml")).toBean();
+		Bean5 bean = (Bean5) VersionedDocument.fromXML(readXML("bean2.xml"))
+				.toBean();
 		assertEquals(bean.getPriority(), 10);
 		assertEquals(bean.getFirstName(), "Robin");
 	}
 
 	@Test
 	public void testAddClass() {
-		Bean7 bean = (Bean7) VersionedDocument.fromXML(readXML("bean2.xml")).toBean(Bean7.class);
+		Bean7 bean = (Bean7) VersionedDocument.fromXML(readXML("bean2.xml"))
+				.toBean(Bean7.class);
 		assertEquals(bean.getPriority(), 10);
 		assertEquals(bean.getFirstName(), "Robin");
 		assertEquals(bean.getAge(), 34);
 	}
-	
+
 	@Test
 	public void testRemoveClass() {
-		CompileTask task = (CompileTask) VersionedDocument.fromXML(readXML("task.xml")).toBean();
+		CompileTask task = (CompileTask) VersionedDocument.fromXML(
+				readXML("task.xml")).toBean();
 		assertEquals(task.priority, 10);
 		assertEquals(task.destDir, "classes");
 		assertEquals(task.options, "-debug");

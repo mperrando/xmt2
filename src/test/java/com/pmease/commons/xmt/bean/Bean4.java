@@ -1,6 +1,5 @@
 package com.pmease.commons.xmt.bean;
 
-
 public class Bean4 {
 	private int priority;
 
@@ -11,5 +10,5 @@ public class Bean4 {
 	public void setPriority(int priority) {
 		this.priority = priority;
 	}
-	
+
 }
