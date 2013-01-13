@@ -3,8 +3,10 @@ package com.pmease.commons.xmt;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
@@ -418,16 +420,22 @@ public final class VersionedDocument implements Document, Serializable {
 	 */
 	public String toXML() {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		try {
+			toStream(baos);
+			return baos.toString("UTF8");
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public void toStream(OutputStream os) throws IOException {
 		OutputFormat format = new OutputFormat();
 		format.setEncoding("UTF8");
 		format.setIndent(true);
 		format.setNewlines(true);
 		try {
-			new XMLWriter(baos, format).write(getWrapped());
-			return baos.toString("UTF8");
+			new XMLWriter(os, format).write(getWrapped());
 		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
-		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
@@ -445,13 +453,24 @@ public final class VersionedDocument implements Document, Serializable {
 
 	public static VersionedDocument fromXML(String xml,
 			MigratorProvider migratorProvider) {
+		try {
+			ByteArrayInputStream bais = new ByteArrayInputStream(
+					xml.getBytes("UTF8"));
+			return fromStream(bais, migratorProvider);
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public static VersionedDocument fromStream(InputStream is) {
+		return fromStream(is, null);
+	}
+	
+	public static VersionedDocument fromStream(InputStream is,
+			MigratorProvider migratorProvider) {
 		synchronized (reader) {
 			try {
-				return new VersionedDocument(
-						reader.read(new ByteArrayInputStream(xml
-								.getBytes("UTF8"))), migratorProvider);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
+				return new VersionedDocument(reader.read(is), migratorProvider);
 			} catch (DocumentException e) {
 				throw new RuntimeException(e);
 			}

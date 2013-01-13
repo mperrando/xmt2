@@ -7,10 +7,9 @@ import java.io.Reader;
 
 public class Util {
 	public static String readXML(String fileName) {
-		InputStream is = null;
 		StringBuffer buffer = new StringBuffer();
-		is = Util.class.getResourceAsStream("/com/pmease/commons/xmt/xml/"
-				+ fileName);
+		InputStream is = null;
+		is = readXMLAsStream(fileName);
 		try {
 			Reader in = new InputStreamReader(is, "UTF8");
 			int c;
@@ -26,5 +25,10 @@ public class Util {
 				throw new RuntimeException(e);
 			}
 		}
+	}
+
+	public static InputStream readXMLAsStream(String fileName) {
+		return Util.class.getResourceAsStream("/com/pmease/commons/xmt/xml/"
+				+ fileName);
 	}
 }

@@ -3,6 +3,10 @@ package com.pmease.commons.xmt;
 import static com.pmease.commons.xmt.Util.readXML;
 import static org.junit.Assert.assertEquals;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
 import org.junit.Test;
 
 import com.pmease.commons.xmt.bean.Bean1;
@@ -103,5 +107,16 @@ public class XMTTest {
 				migratorProvider).toBean(Bean3.class);
 		assertEquals(bean.getPriority(), 11);
 		assertEquals(bean.getAge(), 18);
+	}
+
+	@Test
+	public void testMigrationWithStream() throws IOException {
+		InputStream is = Util.readXMLAsStream("bean1.xml");
+		try {
+			Bean1 bean = (Bean1) VersionedDocument.fromStream(is).toBean();
+			assertEquals(bean.getPriority(), 10);
+		} finally {
+			is.close();
+		}
 	}
 }
