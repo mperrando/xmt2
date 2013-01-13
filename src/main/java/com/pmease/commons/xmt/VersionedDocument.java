@@ -55,6 +55,8 @@ public final class VersionedDocument implements Document, Serializable {
 
 	public static XStream xstream = new XStream();
 
+	public static boolean assumeVersionZeroForNoVersionedBeans;
+
 	private transient String xml;
 
 	private transient Document wrapped;
@@ -465,7 +467,7 @@ public final class VersionedDocument implements Document, Serializable {
 	public static VersionedDocument fromStream(InputStream is) {
 		return fromStream(is, null);
 	}
-	
+
 	public static VersionedDocument fromStream(InputStream is,
 			MigratorProvider migratorProvider) {
 		synchronized (reader) {
@@ -595,7 +597,10 @@ public final class VersionedDocument implements Document, Serializable {
 	 * @return
 	 */
 	public String getVersion() {
-		return getRootElement().attributeValue("version");
+		String versionOnXML = getRootElement().attributeValue("version");
+		if (versionOnXML == null && assumeVersionZeroForNoVersionedBeans)
+			return "0";
+		return versionOnXML;
 	}
 
 	/**

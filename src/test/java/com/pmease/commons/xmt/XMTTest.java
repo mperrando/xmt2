@@ -3,7 +3,6 @@ package com.pmease.commons.xmt;
 import static com.pmease.commons.xmt.Util.readXML;
 import static org.junit.Assert.assertEquals;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -118,5 +117,19 @@ public class XMTTest {
 		} finally {
 			is.close();
 		}
+	}
+	
+	@Test(expected=Exception.class)
+	public void testNoMigrationWithoutVersionInXml() {
+		VersionedDocument.fromXML(readXML("bean1_no_version.xml"))
+				.toBean();
+	}
+
+	@Test
+	public void testMigrationFromVersionZeroWithoutVersionInXml() {
+		VersionedDocument.assumeVersionZeroForNoVersionedBeans = true;
+		Bean1 bean = (Bean1) VersionedDocument.fromXML(readXML("bean1.xml"))
+				.toBean();
+		assertEquals(bean.getPriority(), 10);
 	}
 }
