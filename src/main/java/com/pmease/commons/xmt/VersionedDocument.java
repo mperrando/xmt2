@@ -507,7 +507,7 @@ public final class VersionedDocument implements Document, Serializable {
 				migratorProvider);
 		if (bean != null)
 			versionedDom
-					.setVersion(MigrationHelper.getVersion(bean.getClass()));
+					.setVersion(MigrationHelper.getVersion(bean.getClass(), migratorProvider));
 		return versionedDom;
 	}
 
@@ -574,8 +574,11 @@ public final class VersionedDocument implements Document, Serializable {
 		else
 			getRootElement().setName(
 					xstream.getMapper().serializedClass(beanClass));
-		if (getVersion() != null) {
-			if (MigrationHelper.migrate(getVersion(), beanClass,
+		String version = getVersion();
+		if (version == null && assumeVersionZeroForNoVersionedBeans)
+			version = "0";
+		if (version != null) {
+			if (MigrationHelper.migrate(version, beanClass,
 					migratorProvider, this)) {
 				setVersion(MigrationHelper.getVersion(beanClass,
 						migratorProvider));
@@ -597,10 +600,7 @@ public final class VersionedDocument implements Document, Serializable {
 	 * @return
 	 */
 	public String getVersion() {
-		String versionOnXML = getRootElement().attributeValue("version");
-		if (versionOnXML == null && assumeVersionZeroForNoVersionedBeans)
-			return "0";
-		return versionOnXML;
+		return getRootElement().attributeValue("version");
 	}
 
 	/**

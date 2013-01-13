@@ -17,6 +17,8 @@ import com.pmease.commons.xmt.bean.Bean4;
 import com.pmease.commons.xmt.bean.Bean5;
 import com.pmease.commons.xmt.bean.Bean7;
 import com.pmease.commons.xmt.bean.CompileTask;
+import com.pmease.commons.xmt.bean.SimpleBean1;
+import com.pmease.commons.xmt.bean.SimpleBean1Migrator;
 
 public class XMTTest {
 
@@ -118,11 +120,10 @@ public class XMTTest {
 			is.close();
 		}
 	}
-	
-	@Test(expected=Exception.class)
+
+	@Test(expected = Exception.class)
 	public void testNoMigrationWithoutVersionInXml() {
-		VersionedDocument.fromXML(readXML("bean1_no_version.xml"))
-				.toBean();
+		VersionedDocument.fromXML(readXML("bean1_no_version.xml")).toBean();
 	}
 
 	@Test
@@ -131,5 +132,21 @@ public class XMTTest {
 		Bean1 bean = (Bean1) VersionedDocument.fromXML(readXML("bean1.xml"))
 				.toBean();
 		assertEquals(bean.getPriority(), 10);
+	}
+
+	@Test
+	public void testVersionNumberFromBean() {
+		Bean1 bean1 = new Bean1();
+		VersionedDocument document = VersionedDocument.fromBean(bean1);
+		assertEquals("1", document.getVersion());
+	}
+
+	@Test
+	public void testVersionNumberFromBeanWithMigrator() {
+		SimpleBean1 b = new SimpleBean1();
+		SimpleMigratorProvider migratorProvider = new SimpleMigratorProvider();
+		migratorProvider.put(SimpleBean1.class, SimpleBean1Migrator.class);
+		VersionedDocument document = VersionedDocument.fromBean(b, migratorProvider);
+		assertEquals("1", document.getVersion());
 	}
 }
