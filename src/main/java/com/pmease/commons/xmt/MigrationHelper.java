@@ -88,17 +88,13 @@ public class MigrationHelper {
 			return 0;
 	}
 
-	/**
-	 * Get version of specified migrator class.
-	 * 
-	 * @param migrator
-	 * @return
-	 */
-	public static String getVersion(Class<?> migrator) {
+	public static String getVersion(Class<?> beanClass,
+			MigratorProvider migratorProvider) {
 		List<String> versionParts = new ArrayList<String>();
-		Class<?> current = migrator;
+		Class<?> current = beanClass;
 		while (current != null && current != Object.class) {
-			versionParts.add(String.valueOf(getMigratorAnalyzeResult(current)
+			Class<?> migrator = getMigratorToUse(current, migratorProvider);
+			versionParts.add(String.valueOf(getMigratorAnalyzeResult(migrator)
 					.getDataVersion()));
 			current = current.getSuperclass();
 		}
@@ -107,6 +103,21 @@ public class MigrationHelper {
 		for (String part : versionParts)
 			buffer.append(part).append(".");
 		return buffer.substring(0, buffer.length() - 1);
+	}
+
+	/**
+	 * Get version of specified migrator class.
+	 * 
+	 * @param migrator
+	 * @return
+	 */
+	public static String getVersion(Class<?> migrator) {
+		return getVersion(migrator, null);
+	}
+
+	public static boolean migrate(String fromVersion, Class<?> migrator,
+			Object customData) {
+		return migrate(fromVersion, migrator, null, customData);
 	}
 
 	/**
@@ -120,17 +131,19 @@ public class MigrationHelper {
 	 * @return true if data is migrated; false if data is of current version and
 	 *         does not need a migration.
 	 */
-	public static boolean migrate(String fromVersion, Class<?> migrator,
-			Object customData) {
+	public static boolean migrate(String fromVersion, Class<?> beanClass,
+			MigratorProvider migratorProvider, Object customData) {
 		Stack<Integer> versionParts = new Stack<Integer>();
 		for (String part : fromVersion.split("\\."))
 			versionParts.push(Integer.valueOf(part));
 
 		boolean migrated = false;
 
-		Class<?> current = migrator;
+		Class<?> current = beanClass;
 		while (current != null && current != Object.class) {
-			MigratorAnalyzeResult migratorAnalyzeResult = getMigratorAnalyzeResult(current);
+			Class<?> m = MigrationHelper.getMigratorToUse(current,
+					migratorProvider);
+			MigratorAnalyzeResult migratorAnalyzeResult = getMigratorAnalyzeResult(m);
 
 			int version;
 			if (!versionParts.empty())
@@ -184,7 +197,7 @@ public class MigrationHelper {
 						String.valueOf(currentVersion));
 				logger.fine(message);
 				try {
-					migrateMethod.invoke(migrator.newInstance(), customData,
+					migrateMethod.invoke(m.newInstance(), customData,
 							versionParts);
 				} catch (IllegalAccessException e) {
 					throw new RuntimeException(e);
@@ -198,5 +211,19 @@ public class MigrationHelper {
 			current = current.getSuperclass();
 		}
 		return migrated;
+	}
+
+	public static Class<?> getMigratorToUse(Class<?> beanClass,
+			MigratorProvider migratorProvider) {
+		Class<?> result;
+		if (migratorProvider != null) {
+			result = migratorProvider.get(beanClass);
+			if (result == null)
+				throw new RuntimeException(
+						"The migration provider does not provide a migrator for "
+								+ beanClass);
+		} else
+			result = beanClass;
+		return result;
 	}
 }

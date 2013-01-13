@@ -57,6 +57,8 @@ public final class VersionedDocument implements Document, Serializable {
 
 	private transient Document wrapped;
 
+	private transient MigratorProvider migratorProvider;
+
 	static {
 		reader.setStripWhitespaceText(true);
 		reader.setMergeAdjacentText(true);
@@ -66,18 +68,34 @@ public final class VersionedDocument implements Document, Serializable {
 		this.wrapped = DocumentHelper.createDocument();
 	}
 
-	public VersionedDocument(Document wrapped) {
-		this.wrapped = wrapped;
+	public VersionedDocument(MigratorProvider migratorProvider) {
+		this.wrapped = DocumentHelper.createDocument();
+		this.migratorProvider = migratorProvider;
 	}
 
-	public void setWrapped(Document wrapped) {
+	public VersionedDocument(Document wrapped) {
+		this(wrapped, null);
+	}
+
+	public VersionedDocument(Document wrapped, MigratorProvider migratorProvider) {
+		this.wrapped = wrapped;
+		this.migratorProvider = migratorProvider;
+	}
+
+	public void setWrapped(Document wrapped, MigratorProvider migratorProvider) {
 		this.wrapped = wrapped;
 		this.xml = null;
+		this.migratorProvider = migratorProvider;
 	}
 
 	public VersionedDocument(Element wrapped) {
+		this(wrapped, null);
+	}
+
+	public VersionedDocument(Element wrapped, MigratorProvider migratorProvider) {
 		wrapped.detach();
 		this.wrapped = DocumentHelper.createDocument(wrapped);
+		this.migratorProvider = migratorProvider;
 	}
 
 	public void setWrapped(Element wrapped) {
@@ -375,7 +393,8 @@ public final class VersionedDocument implements Document, Serializable {
 	 * Clone this versioned document as another versioned document.
 	 */
 	public Object clone() {
-		return new VersionedDocument((Document) getWrapped().clone());
+		return new VersionedDocument((Document) getWrapped().clone(),
+				migratorProvider);
 	}
 
 	private void writeObject(ObjectOutputStream oos) throws IOException {
@@ -421,11 +440,16 @@ public final class VersionedDocument implements Document, Serializable {
 	 * @return
 	 */
 	public static VersionedDocument fromXML(String xml) {
+		return fromXML(xml, null);
+	}
+
+	public static VersionedDocument fromXML(String xml,
+			MigratorProvider migratorProvider) {
 		synchronized (reader) {
 			try {
 				return new VersionedDocument(
 						reader.read(new ByteArrayInputStream(xml
-								.getBytes("UTF8"))));
+								.getBytes("UTF8"))), migratorProvider);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			} catch (DocumentException e) {
@@ -451,9 +475,15 @@ public final class VersionedDocument implements Document, Serializable {
 	 * @return
 	 */
 	public static VersionedDocument fromBean(Object bean) {
+		return fromBean(bean, null);
+	}
+
+	public static VersionedDocument fromBean(Object bean,
+			MigratorProvider migratorProvider) {
 		Document dom = DocumentHelper.createDocument();
 		xstream.marshal(bean, new Dom4JWriter(dom));
-		VersionedDocument versionedDom = new VersionedDocument(dom);
+		VersionedDocument versionedDom = new VersionedDocument(dom,
+				migratorProvider);
 		if (bean != null)
 			versionedDom
 					.setVersion(MigrationHelper.getVersion(bean.getClass()));
@@ -524,8 +554,10 @@ public final class VersionedDocument implements Document, Serializable {
 			getRootElement().setName(
 					xstream.getMapper().serializedClass(beanClass));
 		if (getVersion() != null) {
-			if (MigrationHelper.migrate(getVersion(), beanClass, this)) {
-				setVersion(MigrationHelper.getVersion(beanClass));
+			if (MigrationHelper.migrate(getVersion(), beanClass,
+					migratorProvider, this)) {
+				setVersion(MigrationHelper.getVersion(beanClass,
+						migratorProvider));
 				Object bean = xstream.unmarshal(domReader);
 				if (listener != null)
 					listener.migrated(bean);
@@ -555,5 +587,4 @@ public final class VersionedDocument implements Document, Serializable {
 	public void setVersion(String version) {
 		getRootElement().addAttribute("version", version);
 	}
-
 }

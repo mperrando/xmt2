@@ -6,8 +6,10 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import com.pmease.commons.xmt.bean.Bean1;
+import com.pmease.commons.xmt.bean.Bean1Migrator;
 import com.pmease.commons.xmt.bean.Bean2;
 import com.pmease.commons.xmt.bean.Bean3;
+import com.pmease.commons.xmt.bean.Bean3Migrator;
 import com.pmease.commons.xmt.bean.Bean4;
 import com.pmease.commons.xmt.bean.Bean5;
 import com.pmease.commons.xmt.bean.Bean7;
@@ -64,5 +66,42 @@ public class XMTTest {
 		assertEquals(task.destDir, "classes");
 		assertEquals(task.options, "-debug");
 		assertEquals(task.srcFiles.size(), 2);
+	}
+
+	@Test
+	public void testMigrationWithMigratorProvider() {
+		SimpleMigratorProvider migratorProvider = new SimpleMigratorProvider();
+		migratorProvider.put(Bean1.class, Bean1Migrator.class);
+		Bean1 bean = (Bean1) VersionedDocument.fromXML(readXML("bean1.xml"),
+				migratorProvider).toBean();
+		assertEquals(bean.getPriority(), 11);
+	}
+
+	@Test
+	public void testGetVersionWithMigrator() {
+		SimpleMigratorProvider migratorProvider = new SimpleMigratorProvider();
+		migratorProvider.put(Bean1.class, Bean1Migrator.class);
+		assertEquals(MigrationHelper.getVersion(Bean1.class, migratorProvider),
+				"2");
+	}
+
+	@Test
+	public void testCompositeVersionWithMigrator() {
+		SimpleMigratorProvider migratorProvider = new SimpleMigratorProvider();
+		migratorProvider.put(Bean1.class, Bean1Migrator.class);
+		migratorProvider.put(Bean3.class, Bean3Migrator.class);
+		assertEquals(MigrationHelper.getVersion(Bean3.class, migratorProvider),
+				"2.5");
+	}
+
+	@Test
+	public void testMigrationlInheritedWithMigrator() {
+		SimpleMigratorProvider migratorProvider = new SimpleMigratorProvider();
+		migratorProvider.put(Bean1.class, Bean1Migrator.class);
+		migratorProvider.put(Bean3.class, Bean3Migrator.class);
+		Bean3 bean = (Bean3) VersionedDocument.fromXML(readXML("bean1.xml"),
+				migratorProvider).toBean(Bean3.class);
+		assertEquals(bean.getPriority(), 11);
+		assertEquals(bean.getAge(), 18);
 	}
 }

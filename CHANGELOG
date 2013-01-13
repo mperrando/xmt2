@@ -1,0 +1,8 @@
+2012-01-12
+
+* Added the MigationProvider system to manage the migrations of beans.
+
+This new system allows user to better isolate the competences among objects.
+The MigationProvider gives the possibility to implement the migration methods
+OUTSIDE the bean class, that remain clean.
+
