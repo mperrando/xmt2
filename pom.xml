@@ -4,17 +4,20 @@
 	<groupId>xmt</groupId>
 	<artifactId>xmt</artifactId>
 	<version>2.0.0</version>
+	<properties>
+		<maven.compiler.target>1.6</maven.compiler.target>
+		<maven.compiler.source>1.6</maven.compiler.source>
+	</properties>
 	<build>
-		<sourceDirectory>src</sourceDirectory>
 		<plugins>
-			<plugin>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>2.3.2</version>
-				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
-				</configuration>
-			</plugin>
+			<!-- <plugin> -->
+			<!-- <artifactId>maven-compiler-plugin</artifactId> -->
+			<!-- <version>2.3.2</version> -->
+			<!-- <configuration> -->
+			<!-- <source>1.6</source> -->
+			<!-- <target>1.6</target> -->
+			<!-- </configuration> -->
+			<!-- </plugin> -->
 		</plugins>
 	</build>
 	<dependencies>
