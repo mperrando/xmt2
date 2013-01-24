@@ -1,3 +1,10 @@
+2012-01-24
+
+* Dom4j removed in favor of JAXP
+
+The DOM manipulation style is a bit less clean, but this implementation
+is included in the JVM, and we have removed an external dependency.
+
 2012-01-12
 
 * Added the MigationProvider system to manage the migrations of beans.

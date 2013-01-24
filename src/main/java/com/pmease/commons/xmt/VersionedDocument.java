@@ -4,38 +4,23 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
-import java.io.Writer;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 
-import org.dom4j.Branch;
-import org.dom4j.Comment;
-import org.dom4j.Document;
-import org.dom4j.DocumentException;
-import org.dom4j.DocumentHelper;
-import org.dom4j.DocumentType;
-import org.dom4j.Element;
-import org.dom4j.InvalidXPathException;
-import org.dom4j.Node;
-import org.dom4j.ProcessingInstruction;
-import org.dom4j.QName;
-import org.dom4j.Visitor;
-import org.dom4j.XPath;
-import org.dom4j.io.OutputFormat;
-import org.dom4j.io.SAXReader;
-import org.dom4j.io.XMLWriter;
-import org.xml.sax.EntityResolver;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.Document;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.core.util.HierarchicalStreams;
-import com.thoughtworks.xstream.io.xml.Dom4JReader;
-import com.thoughtworks.xstream.io.xml.Dom4JWriter;
+import com.thoughtworks.xstream.io.xml.DomReader;
+import com.thoughtworks.xstream.io.xml.DomWriter;
 
 /**
  * This class is the bridge between bean and XML. It implements dom4j
@@ -43,376 +28,32 @@ import com.thoughtworks.xstream.io.xml.Dom4JWriter;
  * implements Serializable interface and can be serialized/deserialized in XML
  * form.
  * 
- * @author robin
+ * @author robin, marco.perrando@gmail.com
  * 
  */
-@SuppressWarnings("unchecked")
-public final class VersionedDocument implements Document, Serializable {
+public final class VersionedDocument {
 
-	private static final long serialVersionUID = 1L;
-
-	private static SAXReader reader = new SAXReader();
+	private final static DocumentBuilderFactory dbf = DocumentBuilderFactory
+			.newInstance();
+	private static final TransformerFactory tFactory = TransformerFactory
+			.newInstance();
 
 	public static XStream xstream = new XStream();
 
 	public static boolean assumeVersionZeroForNoVersionedBeans;
 
-	private transient String xml;
+	private final MigratorProvider migratorProvider;
 
-	private transient Document wrapped;
+	private final Document dom;
 
-	private transient MigratorProvider migratorProvider;
+	// static {
+	// reader.setStripWhitespaceText(true);
+	// reader.setMergeAdjacentText(true);
+	// }
 
-	static {
-		reader.setStripWhitespaceText(true);
-		reader.setMergeAdjacentText(true);
-	}
-
-	public VersionedDocument() {
-		this.wrapped = DocumentHelper.createDocument();
-	}
-
-	public VersionedDocument(MigratorProvider migratorProvider) {
-		this.wrapped = DocumentHelper.createDocument();
+	public VersionedDocument(Document dom, MigratorProvider migratorProvider) {
+		this.dom = dom;
 		this.migratorProvider = migratorProvider;
-	}
-
-	public VersionedDocument(Document wrapped) {
-		this(wrapped, null);
-	}
-
-	public VersionedDocument(Document wrapped, MigratorProvider migratorProvider) {
-		this.wrapped = wrapped;
-		this.migratorProvider = migratorProvider;
-	}
-
-	public void setWrapped(Document wrapped, MigratorProvider migratorProvider) {
-		this.wrapped = wrapped;
-		this.xml = null;
-		this.migratorProvider = migratorProvider;
-	}
-
-	public VersionedDocument(Element wrapped) {
-		this(wrapped, null);
-	}
-
-	public VersionedDocument(Element wrapped, MigratorProvider migratorProvider) {
-		wrapped.detach();
-		this.wrapped = DocumentHelper.createDocument(wrapped);
-		this.migratorProvider = migratorProvider;
-	}
-
-	public void setWrapped(Element wrapped) {
-		wrapped.detach();
-		this.wrapped = DocumentHelper.createDocument(wrapped);
-		this.xml = null;
-	}
-
-	public Document addComment(String comment) {
-		return getWrapped().addComment(comment);
-	}
-
-	public Document addDocType(String name, String publicId, String systemId) {
-		return getWrapped().addDocType(name, publicId, systemId);
-	}
-
-	public Document addProcessingInstruction(String target, String text) {
-		return getWrapped().addProcessingInstruction(target, text);
-	}
-
-	public Document addProcessingInstruction(String target, Map data) {
-		return getWrapped().addProcessingInstruction(target, data);
-	}
-
-	public DocumentType getDocType() {
-		return getWrapped().getDocType();
-	}
-
-	public EntityResolver getEntityResolver() {
-		return getWrapped().getEntityResolver();
-	}
-
-	public Element getRootElement() {
-		return getWrapped().getRootElement();
-	}
-
-	public String getXMLEncoding() {
-		return getWrapped().getXMLEncoding();
-	}
-
-	public void setDocType(DocumentType docType) {
-		getWrapped().setDocType(docType);
-	}
-
-	public void setEntityResolver(EntityResolver entityResolver) {
-		getWrapped().setEntityResolver(entityResolver);
-	}
-
-	public void setRootElement(Element rootElement) {
-		getWrapped().setRootElement(rootElement);
-	}
-
-	public void setXMLEncoding(String encoding) {
-		getWrapped().setXMLEncoding(encoding);
-	}
-
-	public void add(Node node) {
-		getWrapped().add(node);
-	}
-
-	public void add(Comment comment) {
-		getWrapped().add(comment);
-	}
-
-	public void add(Element element) {
-		getWrapped().add(element);
-	}
-
-	public void add(ProcessingInstruction pi) {
-		getWrapped().add(pi);
-	}
-
-	public Element addElement(String name) {
-		return getWrapped().addElement(name);
-	}
-
-	public Element addElement(QName qname) {
-		return getWrapped().addElement(qname);
-	}
-
-	public Element addElement(String qualifiedName, String namespaceURI) {
-		return getWrapped().addElement(qualifiedName, namespaceURI);
-	}
-
-	public void appendContent(Branch branch) {
-		getWrapped().appendContent(branch);
-	}
-
-	public void clearContent() {
-		getWrapped().clearContent();
-	}
-
-	public List content() {
-		return getWrapped().content();
-	}
-
-	public Element elementByID(String elementID) {
-		return getWrapped().elementByID(elementID);
-	}
-
-	public int indexOf(Node node) {
-		return getWrapped().indexOf(node);
-	}
-
-	public Node node(int index) throws IndexOutOfBoundsException {
-		return getWrapped().node(index);
-	}
-
-	public int nodeCount() {
-		return getWrapped().nodeCount();
-	}
-
-	public Iterator nodeIterator() {
-		return getWrapped().nodeIterator();
-	}
-
-	public void normalize() {
-		getWrapped().normalize();
-	}
-
-	public ProcessingInstruction processingInstruction(String target) {
-		return getWrapped().processingInstruction(target);
-	}
-
-	public List processingInstructions() {
-		return getWrapped().processingInstructions();
-	}
-
-	public List processingInstructions(String target) {
-		return getWrapped().processingInstructions(target);
-	}
-
-	public boolean remove(Node node) {
-		return getWrapped().remove(node);
-	}
-
-	public boolean remove(Comment comment) {
-		return getWrapped().remove(comment);
-	}
-
-	public boolean remove(Element element) {
-		return getWrapped().remove(element);
-	}
-
-	public boolean remove(ProcessingInstruction pi) {
-		return getWrapped().remove(pi);
-	}
-
-	public boolean removeProcessingInstruction(String target) {
-		return getWrapped().removeProcessingInstruction(target);
-	}
-
-	public void setContent(List content) {
-		getWrapped().setContent(content);
-	}
-
-	public void setProcessingInstructions(List listOfPIs) {
-		getWrapped().setProcessingInstructions(listOfPIs);
-	}
-
-	public void accept(Visitor visitor) {
-		getWrapped().accept(visitor);
-	}
-
-	public String asXML() {
-		return toXML();
-	}
-
-	public Node asXPathResult(Element parent) {
-		return getWrapped().asXPathResult(parent);
-	}
-
-	public XPath createXPath(String xpathExpression)
-			throws InvalidXPathException {
-		return getWrapped().createXPath(xpathExpression);
-	}
-
-	public Node detach() {
-		return getWrapped().detach();
-	}
-
-	public Document getDocument() {
-		return getWrapped().getDocument();
-	}
-
-	public String getName() {
-		return getWrapped().getName();
-	}
-
-	public short getNodeType() {
-		return getWrapped().getNodeType();
-	}
-
-	public String getNodeTypeName() {
-		return getWrapped().getNodeTypeName();
-	}
-
-	public Element getParent() {
-		return getWrapped().getParent();
-	}
-
-	public String getPath() {
-		return getWrapped().getPath();
-	}
-
-	public String getPath(Element context) {
-		return getWrapped().getPath(context);
-	}
-
-	public String getStringValue() {
-		return getWrapped().getStringValue();
-	}
-
-	public String getText() {
-		return getWrapped().getText();
-	}
-
-	public String getUniquePath() {
-		return getWrapped().getUniquePath();
-	}
-
-	public String getUniquePath(Element context) {
-		return getWrapped().getUniquePath(context);
-	}
-
-	public boolean hasContent() {
-		return getWrapped().hasContent();
-	}
-
-	public boolean isReadOnly() {
-		return getWrapped().isReadOnly();
-	}
-
-	public boolean matches(String xpathExpression) {
-		return getWrapped().matches(xpathExpression);
-	}
-
-	public Number numberValueOf(String xpathExpression) {
-		return getWrapped().numberValueOf(xpathExpression);
-	}
-
-	public List selectNodes(String xpathExpression) {
-		return getWrapped().selectNodes(xpathExpression);
-	}
-
-	public List selectNodes(String xpathExpression,
-			String comparisonXPathExpression) {
-		return getWrapped().selectNodes(xpathExpression,
-				comparisonXPathExpression);
-	}
-
-	public List selectNodes(String xpathExpression,
-			String comparisonXPathExpression, boolean removeDuplicates) {
-		return getWrapped().selectNodes(xpathExpression,
-				comparisonXPathExpression, removeDuplicates);
-	}
-
-	public Object selectObject(String xpathExpression) {
-		return getWrapped().selectObject(xpathExpression);
-	}
-
-	public Node selectSingleNode(String xpathExpression) {
-		return getWrapped().selectSingleNode(xpathExpression);
-	}
-
-	public void setDocument(Document document) {
-		getWrapped().setDocument(document);
-	}
-
-	public void setName(String name) {
-		getWrapped().setName(name);
-	}
-
-	public void setParent(Element parent) {
-		getWrapped().setParent(parent);
-	}
-
-	public void setText(String text) {
-		getWrapped().setText(text);
-	}
-
-	public boolean supportsParent() {
-		return getWrapped().supportsParent();
-	}
-
-	public String valueOf(String xpathExpression) {
-		return getWrapped().valueOf(xpathExpression);
-	}
-
-	public void write(Writer writer) throws IOException {
-		getWrapped().write(writer);
-	}
-
-	/**
-	 * Clone this versioned document as another versioned document.
-	 */
-	public Object clone() {
-		return new VersionedDocument((Document) getWrapped().clone(),
-				migratorProvider);
-	}
-
-	private void writeObject(ObjectOutputStream oos) throws IOException {
-		oos.defaultWriteObject();
-		if (xml != null)
-			oos.writeObject(xml);
-		else
-			oos.writeObject(toXML());
-	}
-
-	private void readObject(ObjectInputStream ois)
-			throws ClassNotFoundException, IOException {
-		ois.defaultReadObject();
-		xml = (String) ois.readObject();
 	}
 
 	/**
@@ -431,14 +72,14 @@ public final class VersionedDocument implements Document, Serializable {
 	}
 
 	public void toStream(OutputStream os) throws IOException {
-		OutputFormat format = new OutputFormat();
-		format.setEncoding("UTF8");
-		format.setIndent(true);
-		format.setNewlines(true);
+		Transformer transformer;
 		try {
-			new XMLWriter(os, format).write(getWrapped());
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
+			transformer = tFactory.newTransformer();
+			DOMSource source = new DOMSource(dom);
+			StreamResult result = new StreamResult(os);
+			transformer.transform(source, result);
+		} catch (TransformerException e) {
+			throw new IOException("Problems with transofrmation", e);
 		}
 	}
 
@@ -470,23 +111,14 @@ public final class VersionedDocument implements Document, Serializable {
 
 	public static VersionedDocument fromStream(InputStream is,
 			MigratorProvider migratorProvider) {
-		synchronized (reader) {
-			try {
-				return new VersionedDocument(reader.read(is), migratorProvider);
-			} catch (DocumentException e) {
-				throw new RuntimeException(e);
-			}
+		Document dom;
+		try {
+			dom = dbf.newDocumentBuilder().parse(is);
+		} catch (Exception e) {
+			throw newUnexpectedError(e);
 		}
-	}
+		return new VersionedDocument(dom, migratorProvider);
 
-	private Document getWrapped() {
-		if (wrapped == null) {
-			if (xml != null) {
-				wrapped = fromXML(xml).getWrapped();
-				xml = null;
-			}
-		}
-		return wrapped;
 	}
 
 	/**
@@ -501,14 +133,23 @@ public final class VersionedDocument implements Document, Serializable {
 
 	public static VersionedDocument fromBean(Object bean,
 			MigratorProvider migratorProvider) {
-		Document dom = DocumentHelper.createDocument();
-		xstream.marshal(bean, new Dom4JWriter(dom));
+		Document dom;
+		try {
+			dom = dbf.newDocumentBuilder().newDocument();
+		} catch (ParserConfigurationException e) {
+			throw newUnexpectedError(e);
+		}
+		xstream.marshal(bean, new DomWriter(dom));
 		VersionedDocument versionedDom = new VersionedDocument(dom,
 				migratorProvider);
 		if (bean != null)
-			versionedDom
-					.setVersion(MigrationHelper.getVersion(bean.getClass(), migratorProvider));
+			versionedDom.setVersion(MigrationHelper.getVersion(bean.getClass(),
+					migratorProvider));
 		return versionedDom;
+	}
+
+	private static RuntimeException newUnexpectedError(Exception e) {
+		return new RuntimeException("Unexpected error", e);
 	}
 
 	/**
@@ -564,34 +205,32 @@ public final class VersionedDocument implements Document, Serializable {
 	 * @return
 	 */
 	public Object toBean(MigrationListener listener, Class<?> beanClass) {
-		Dom4JReader domReader = new Dom4JReader(this);
-		Class<?> origBeanClass = HierarchicalStreams.readClassType(domReader,
-				xstream.getMapper());
+		Class<?> origBeanClass = HierarchicalStreams.readClassType(
+				new DomReader(dom), xstream.getMapper());
+
 		if (origBeanClass == null)
 			return null;
 		if (beanClass == null)
 			beanClass = origBeanClass;
 		else
-			getRootElement().setName(
-					xstream.getMapper().serializedClass(beanClass));
+			dom.renameNode(dom.getDocumentElement(), "", xstream.getMapper()
+					.serializedClass(beanClass));
+
 		String version = getVersion();
 		if (version == null && assumeVersionZeroForNoVersionedBeans)
 			version = "0";
 		if (version != null) {
-			if (MigrationHelper.migrate(version, beanClass,
-					migratorProvider, this)) {
+			if (MigrationHelper.migrate(version, beanClass, migratorProvider,
+					dom)) {
 				setVersion(MigrationHelper.getVersion(beanClass,
 						migratorProvider));
-				Object bean = xstream.unmarshal(domReader);
+				Object bean = xstream.unmarshal(new DomReader(dom));
 				if (listener != null)
 					listener.migrated(bean);
 				return bean;
-			} else {
-				return xstream.unmarshal(domReader);
 			}
-		} else {
-			return xstream.unmarshal(domReader);
 		}
+		return xstream.unmarshal(new DomReader(dom));
 	}
 
 	/**
@@ -600,7 +239,7 @@ public final class VersionedDocument implements Document, Serializable {
 	 * @return
 	 */
 	public String getVersion() {
-		return getRootElement().attributeValue("version");
+		return dom.getDocumentElement().getAttribute("version");
 	}
 
 	/**
@@ -609,6 +248,6 @@ public final class VersionedDocument implements Document, Serializable {
 	 * @param version
 	 */
 	public void setVersion(String version) {
-		getRootElement().addAttribute("version", version);
+		dom.getDocumentElement().setAttribute("version", version);
 	}
 }

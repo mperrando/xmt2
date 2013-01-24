@@ -2,9 +2,9 @@ package com.pmease.commons.xmt.bean;
 
 import java.util.Stack;
 
-import org.dom4j.Element;
-
-import com.pmease.commons.xmt.VersionedDocument;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 public class Bean2 {
 	private int priority;
@@ -18,12 +18,13 @@ public class Bean2 {
 	}
 
 	@SuppressWarnings("unused")
-	private void migrate1(VersionedDocument dom, Stack<Integer> versions) {
-		Element element = dom.getRootElement().element("prioritized");
-		element.setName("priority");
-		if (element.getText().equals("true"))
-			element.setText("10");
+	private void migrate1(Document dom, Stack<Integer> versions) {
+		Node node = dom.getDocumentElement().getElementsByTagName("prioritized").item(0);
+		Element element = (Element) node;
+		element = (Element) dom.renameNode(element, "", "priority");
+		if (element.getTextContent().equals("true"))
+			element.setTextContent("10");
 		else
-			element.setText("1");
+			element.setTextContent("1");
 	}
 }

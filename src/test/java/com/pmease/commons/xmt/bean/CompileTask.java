@@ -3,7 +3,7 @@ package com.pmease.commons.xmt.bean;
 import java.util.List;
 import java.util.Stack;
 
-import com.pmease.commons.xmt.VersionedDocument;
+import org.w3c.dom.Document;
 
 public class CompileTask extends AbstractCompileTask {
 	public List<String> srcFiles;
@@ -11,13 +11,13 @@ public class CompileTask extends AbstractCompileTask {
 	public String destDir = "classes";
 
 	@SuppressWarnings("unused")
-	private void migrate1(VersionedDocument dom, Stack<Integer> versions) {
-		dom.getRootElement().addElement("destDir").setText("classes");
+	private void migrate1(Document dom, Stack<Integer> versions) {
+		dom.getDocumentElement().appendChild(dom.createElement("destDir")).setTextContent("classes");
 	}
 
 	@SuppressWarnings("unused")
-	private void migrate2(VersionedDocument dom, Stack<Integer> versions) {
+	private void migrate2(Document dom, Stack<Integer> versions) {
 		versions.push(0);
-		dom.getRootElement().addElement("options").setText("-debug");
+		dom.getDocumentElement().appendChild(dom.createElement("options")).setTextContent("-debug");
 	}
 }

@@ -2,6 +2,7 @@ package com.pmease.commons.xmt;
 
 import static com.pmease.commons.xmt.Util.readXML;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -146,7 +147,15 @@ public class XMTTest {
 		SimpleBean1 b = new SimpleBean1();
 		SimpleMigratorProvider migratorProvider = new SimpleMigratorProvider();
 		migratorProvider.put(SimpleBean1.class, SimpleBean1Migrator.class);
-		VersionedDocument document = VersionedDocument.fromBean(b, migratorProvider);
+		VersionedDocument document = VersionedDocument.fromBean(b,
+				migratorProvider);
 		assertEquals("1", document.getVersion());
+	}
+
+	@Test
+	public void testWritesXmlString() throws Exception {
+		Bean1 bean = new Bean1();
+		String producedXml = VersionedDocument.fromBean(bean).toXML();
+		assertTrue("This does not seem an xml document", producedXml.startsWith("<?xml"));
 	}
 }
