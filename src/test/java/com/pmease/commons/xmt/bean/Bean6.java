@@ -9,11 +9,13 @@ import org.w3c.dom.Node;
 public class Bean6 extends Bean3 {
 	private int priority;
 
-	public int getPriority() {
+	@Override
+    public int getPriority() {
 		return priority;
 	}
 
-	public void setPriority(int priority) {
+	@Override
+    public void setPriority(int priority) {
 		this.priority = priority;
 	}
 
