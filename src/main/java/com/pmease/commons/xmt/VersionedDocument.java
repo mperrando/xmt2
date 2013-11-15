@@ -5,10 +5,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
@@ -71,17 +73,32 @@ public final class VersionedDocument {
 		}
 	}
 
-	public void toStream(OutputStream os) throws IOException {
-		Transformer transformer;
-		try {
-			transformer = tFactory.newTransformer();
-			DOMSource source = new DOMSource(dom);
-			StreamResult result = new StreamResult(os);
-			transformer.transform(source, result);
-		} catch (TransformerException e) {
-			throw new IOException("Problems with transofrmation", e);
-		}
-	}
+    public void toStream(OutputStream os) throws IOException {
+        toStream(os, 0);
+    }
+
+    public void toStream(OutputStream os, int indentAmount) throws IOException {
+        Transformer transformer;
+        try {
+            if (indentAmount > 0) {
+                // see http://stackoverflow.com/a/7412938/562848
+                tFactory.setAttribute("indent-number", indentAmount);
+            }
+            transformer = tFactory.newTransformer();
+            if (indentAmount > 0) {
+                // see http://stackoverflow.com/a/7412938/562848
+                transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            }
+            DOMSource source = new DOMSource(dom);
+            // see http://stackoverflow.com/a/7412938/562848
+            OutputStreamWriter intermediateStream = new OutputStreamWriter(os,
+                    "utf-8");
+            StreamResult result = new StreamResult(intermediateStream);
+            transformer.transform(source, result);
+        } catch (TransformerException e) {
+            throw new IOException("Problems with transofrmation", e);
+        }
+    }
 
 	/**
 	 * Construct the document from a XML text.
