@@ -81,8 +81,13 @@ public final class VersionedDocument {
         Transformer transformer;
         try {
             if (indentAmount > 0) {
-                // see http://stackoverflow.com/a/7412938/562848
-                tFactory.setAttribute("indent-number", indentAmount);
+                try {
+                    // see http://stackoverflow.com/a/7412938/562848
+                    tFactory.setAttribute("indent-number", indentAmount);
+                } catch (Exception e) {
+                    System.err.println("[XMT]Cannot set indentation amount");
+                    e.printStackTrace();
+                }
             }
             transformer = tFactory.newTransformer();
             if (indentAmount > 0) {
