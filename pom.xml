@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>xmt</groupId>
 	<artifactId>xmt</artifactId>
-	<version>2.1.0</version>
+	<version>2.1.1</version>
 	<properties>
 		<maven.compiler.target>1.6</maven.compiler.target>
 		<maven.compiler.source>1.6</maven.compiler.source>
