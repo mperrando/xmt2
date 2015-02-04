@@ -238,10 +238,14 @@ public final class VersionedDocument {
 			dom.renameNode(dom.getDocumentElement(), "", xstream.getMapper()
 					.serializedClass(beanClass));
 
-		String version = getVersion();
-		if (version == null && assumeVersionZeroForNoVersionedBeans)
-			version = "0";
-		if (version != null) {
+        String version;
+        if (hasVersion())
+            version = getVersion();
+        else if (assumeVersionZeroForNoVersionedBeans)
+            version = "0";
+        else
+            version = null;
+        if (version != null) {
 			if (MigrationHelper.migrate(version, beanClass, migratorProvider,
 					dom)) {
 				setVersion(MigrationHelper.getVersion(beanClass,
@@ -254,6 +258,15 @@ public final class VersionedDocument {
 		}
 		return xstream.unmarshal(new DomReader(dom));
 	}
+
+    /**
+     * Tells wether the document has the version attribute specified.
+     * 
+     * @return true if the document has the version attribute specified.
+     */
+    public boolean hasVersion() {
+        return dom.getDocumentElement().hasAttribute("version");
+    }
 
 	/**
 	 * Get version of the document

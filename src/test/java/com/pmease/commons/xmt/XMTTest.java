@@ -128,6 +128,12 @@ public class XMTTest {
 	}
 
 	@Test
+    public void testMigrationWithoutVersionInXmlIfOptionProvided() {
+	    VersionedDocument.assumeVersionZeroForNoVersionedBeans = true;
+        VersionedDocument.fromXML(readXML("bean1_no_version.xml")).toBean();
+    }
+
+	@Test
 	public void testMigrationFromVersionZeroWithoutVersionInXml() {
 		VersionedDocument.assumeVersionZeroForNoVersionedBeans = true;
 		Bean1 bean = (Bean1) VersionedDocument.fromXML(readXML("bean1.xml"))
