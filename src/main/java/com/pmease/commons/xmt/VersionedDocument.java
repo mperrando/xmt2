@@ -35,43 +35,42 @@ import com.thoughtworks.xstream.io.xml.DomWriter;
  */
 public final class VersionedDocument {
 
-	private final static DocumentBuilderFactory dbf = DocumentBuilderFactory
-			.newInstance();
-	private static final TransformerFactory tFactory = TransformerFactory
-			.newInstance();
+    private final static DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+    private static final TransformerFactory tFactory = TransformerFactory.newInstance();
 
-	public static XStream xstream = new XStream();
+    public static XStream xstream = new XStream();
 
-	public static boolean assumeVersionZeroForNoVersionedBeans;
+    public static boolean assumeVersionZeroForNoVersionedBeans;
 
-	private final MigratorProvider migratorProvider;
+    private final MigratorProvider migratorProvider;
 
-	private final Document dom;
+    private final Document dom;
+    public static boolean silenceIndentationError;
 
-	// static {
-	// reader.setStripWhitespaceText(true);
-	// reader.setMergeAdjacentText(true);
-	// }
+    // static {
+    // reader.setStripWhitespaceText(true);
+    // reader.setMergeAdjacentText(true);
+    // }
 
-	public VersionedDocument(Document dom, MigratorProvider migratorProvider) {
-		this.dom = dom;
-		this.migratorProvider = migratorProvider;
-	}
+    public VersionedDocument(Document dom, MigratorProvider migratorProvider) {
+        this.dom = dom;
+        this.migratorProvider = migratorProvider;
+    }
 
-	/**
-	 * Convert the versioned document to UTF8 encoded XML.
-	 * 
-	 * @return
-	 */
-	public String toXML() {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		try {
-			toStream(baos);
-			return baos.toString("UTF8");
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
+    /**
+     * Convert the versioned document to UTF8 encoded XML.
+     * 
+     * @return
+     */
+    public String toXML() {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try {
+            toStream(baos);
+            return baos.toString("UTF8");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public void toStream(OutputStream os) throws IOException {
         toStream(os, 0);
@@ -85,8 +84,10 @@ public final class VersionedDocument {
                     // see http://stackoverflow.com/a/7412938/562848
                     tFactory.setAttribute("indent-number", indentAmount);
                 } catch (Exception e) {
-                    System.err.println("[XMT]Cannot set indentation amount");
-                    e.printStackTrace();
+                    if (!silenceIndentationError) {
+                        System.err.println("[XMT]Cannot set indentation amount");
+                        e.printStackTrace();
+                    }
                 }
             }
             transformer = tFactory.newTransformer();
@@ -96,8 +97,7 @@ public final class VersionedDocument {
             }
             DOMSource source = new DOMSource(dom);
             // see http://stackoverflow.com/a/7412938/562848
-            OutputStreamWriter intermediateStream = new OutputStreamWriter(os,
-                    "utf-8");
+            OutputStreamWriter intermediateStream = new OutputStreamWriter(os, "utf-8");
             StreamResult result = new StreamResult(intermediateStream);
             transformer.transform(source, result);
         } catch (TransformerException e) {
@@ -105,138 +105,130 @@ public final class VersionedDocument {
         }
     }
 
-	/**
-	 * Construct the document from a XML text.
-	 * 
-	 * @param xml
-	 *            UTF8 encoded XML text
-	 * @return
-	 */
-	public static VersionedDocument fromXML(String xml) {
-		return fromXML(xml, null);
-	}
+    /**
+     * Construct the document from a XML text.
+     * 
+     * @param xml
+     *            UTF8 encoded XML text
+     * @return
+     */
+    public static VersionedDocument fromXML(String xml) {
+        return fromXML(xml, null);
+    }
 
-	public static VersionedDocument fromXML(String xml,
-			MigratorProvider migratorProvider) {
-		try {
-			ByteArrayInputStream bais = new ByteArrayInputStream(
-					xml.getBytes("UTF8"));
-			return fromStream(bais, migratorProvider);
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
-		}
-	}
+    public static VersionedDocument fromXML(String xml, MigratorProvider migratorProvider) {
+        try {
+            ByteArrayInputStream bais = new ByteArrayInputStream(xml.getBytes("UTF8"));
+            return fromStream(bais, migratorProvider);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-	public static VersionedDocument fromStream(InputStream is) {
-		return fromStream(is, null);
-	}
+    public static VersionedDocument fromStream(InputStream is) {
+        return fromStream(is, null);
+    }
 
-	public static VersionedDocument fromStream(InputStream is,
-			MigratorProvider migratorProvider) {
-		Document dom;
-		try {
-			dom = dbf.newDocumentBuilder().parse(is);
-		} catch (Exception e) {
-			throw newUnexpectedError(e);
-		}
-		return new VersionedDocument(dom, migratorProvider);
+    public static VersionedDocument fromStream(InputStream is, MigratorProvider migratorProvider) {
+        Document dom;
+        try {
+            dom = dbf.newDocumentBuilder().parse(is);
+        } catch (Exception e) {
+            throw newUnexpectedError(e);
+        }
+        return new VersionedDocument(dom, migratorProvider);
 
-	}
+    }
 
-	/**
-	 * Construct the versioned document from specified bean object.
-	 * 
-	 * @param bean
-	 * @return
-	 */
-	public static VersionedDocument fromBean(Object bean) {
-		return fromBean(bean, null);
-	}
+    /**
+     * Construct the versioned document from specified bean object.
+     * 
+     * @param bean
+     * @return
+     */
+    public static VersionedDocument fromBean(Object bean) {
+        return fromBean(bean, null);
+    }
 
-	public static VersionedDocument fromBean(Object bean,
-			MigratorProvider migratorProvider) {
-		Document dom;
-		try {
-			dom = dbf.newDocumentBuilder().newDocument();
-		} catch (ParserConfigurationException e) {
-			throw newUnexpectedError(e);
-		}
-		xstream.marshal(bean, new DomWriter(dom));
-		VersionedDocument versionedDom = new VersionedDocument(dom,
-				migratorProvider);
-		if (bean != null)
-			versionedDom.setVersion(MigrationHelper.getVersion(bean.getClass(),
-					migratorProvider));
-		return versionedDom;
-	}
+    public static VersionedDocument fromBean(Object bean, MigratorProvider migratorProvider) {
+        Document dom;
+        try {
+            dom = dbf.newDocumentBuilder().newDocument();
+        } catch (ParserConfigurationException e) {
+            throw newUnexpectedError(e);
+        }
+        xstream.marshal(bean, new DomWriter(dom));
+        VersionedDocument versionedDom = new VersionedDocument(dom, migratorProvider);
+        if (bean != null)
+            versionedDom.setVersion(MigrationHelper.getVersion(bean.getClass(), migratorProvider));
+        return versionedDom;
+    }
 
-	private static RuntimeException newUnexpectedError(Exception e) {
-		return new RuntimeException("Unexpected error", e);
-	}
+    private static RuntimeException newUnexpectedError(Exception e) {
+        return new RuntimeException("Unexpected error", e);
+    }
 
-	/**
-	 * Convert this document to bean. Migration will performed if necessary.
-	 * During the migration, content of the document will also get updated to
-	 * reflect current migration result.
-	 * 
-	 * @return
-	 */
-	public Object toBean() {
-		return toBean(null, null);
-	}
+    /**
+     * Convert this document to bean. Migration will performed if necessary.
+     * During the migration, content of the document will also get updated to
+     * reflect current migration result.
+     * 
+     * @return
+     */
+    public Object toBean() {
+        return toBean(null, null);
+    }
 
-	/**
-	 * Convert this document to bean. Migration will performed if necessary.
-	 * During the migration, content of the document will also get updated to
-	 * reflect current migration result.
-	 * 
-	 * @param listener
-	 *            the migration listener to receive migration events. Set to
-	 *            null if you do not want to receive migration events.
-	 * @return
-	 */
-	public Object toBean(MigrationListener listener) {
-		return toBean(listener, null);
-	}
+    /**
+     * Convert this document to bean. Migration will performed if necessary.
+     * During the migration, content of the document will also get updated to
+     * reflect current migration result.
+     * 
+     * @param listener
+     *            the migration listener to receive migration events. Set to
+     *            null if you do not want to receive migration events.
+     * @return
+     */
+    public Object toBean(MigrationListener listener) {
+        return toBean(listener, null);
+    }
 
-	/**
-	 * Convert this document to bean. Migration will performed if necessary.
-	 * During the migration, content of the document will also get updated to
-	 * reflect current migration result.
-	 * 
-	 * @param beanClass
-	 *            class of the bean. Class information in current document will
-	 *            be used if this param is set to null
-	 * @return
-	 */
-	public Object toBean(Class<?> beanClass) {
-		return toBean(null, beanClass);
-	}
+    /**
+     * Convert this document to bean. Migration will performed if necessary.
+     * During the migration, content of the document will also get updated to
+     * reflect current migration result.
+     * 
+     * @param beanClass
+     *            class of the bean. Class information in current document will
+     *            be used if this param is set to null
+     * @return
+     */
+    public Object toBean(Class<?> beanClass) {
+        return toBean(null, beanClass);
+    }
 
-	/**
-	 * Convert this document to bean. Migration will performed if necessary.
-	 * During the migration, content of the document will also get updated to
-	 * reflect current migration result.
-	 * 
-	 * @param listener
-	 *            the migration listener to receive migration events. Set to
-	 *            null if you do not want to receive migration events.
-	 * @param beanClass
-	 *            class of the bean. Class information in current document will
-	 *            be used if this param is set to null
-	 * @return
-	 */
-	public Object toBean(MigrationListener listener, Class<?> beanClass) {
-		Class<?> origBeanClass = HierarchicalStreams.readClassType(
-				new DomReader(dom), xstream.getMapper());
+    /**
+     * Convert this document to bean. Migration will performed if necessary.
+     * During the migration, content of the document will also get updated to
+     * reflect current migration result.
+     * 
+     * @param listener
+     *            the migration listener to receive migration events. Set to
+     *            null if you do not want to receive migration events.
+     * @param beanClass
+     *            class of the bean. Class information in current document will
+     *            be used if this param is set to null
+     * @return
+     */
+    public Object toBean(MigrationListener listener, Class<?> beanClass) {
+        Class<?> origBeanClass = HierarchicalStreams.readClassType(new DomReader(dom), xstream.getMapper());
 
-		if (origBeanClass == null)
-			return null;
-		if (beanClass == null)
-			beanClass = origBeanClass;
-		else
-			dom.renameNode(dom.getDocumentElement(), "", xstream.getMapper()
-					.serializedClass(beanClass));
+        if (origBeanClass == null)
+            return null;
+        if (beanClass == null)
+            beanClass = origBeanClass;
+        else
+            dom.renameNode(dom.getDocumentElement(), "", xstream.getMapper().serializedClass(beanClass));
 
         String version;
         if (hasVersion())
@@ -246,18 +238,16 @@ public final class VersionedDocument {
         else
             version = null;
         if (version != null) {
-			if (MigrationHelper.migrate(version, beanClass, migratorProvider,
-					dom)) {
-				setVersion(MigrationHelper.getVersion(beanClass,
-						migratorProvider));
-				Object bean = xstream.unmarshal(new DomReader(dom));
-				if (listener != null)
-					listener.migrated(bean);
-				return bean;
-			}
-		}
-		return xstream.unmarshal(new DomReader(dom));
-	}
+            if (MigrationHelper.migrate(version, beanClass, migratorProvider, dom)) {
+                setVersion(MigrationHelper.getVersion(beanClass, migratorProvider));
+                Object bean = xstream.unmarshal(new DomReader(dom));
+                if (listener != null)
+                    listener.migrated(bean);
+                return bean;
+            }
+        }
+        return xstream.unmarshal(new DomReader(dom));
+    }
 
     /**
      * Tells wether the document has the version attribute specified.
@@ -268,21 +258,21 @@ public final class VersionedDocument {
         return dom.getDocumentElement().hasAttribute("version");
     }
 
-	/**
-	 * Get version of the document
-	 * 
-	 * @return
-	 */
-	public String getVersion() {
-		return dom.getDocumentElement().getAttribute("version");
-	}
+    /**
+     * Get version of the document
+     * 
+     * @return
+     */
+    public String getVersion() {
+        return dom.getDocumentElement().getAttribute("version");
+    }
 
-	/**
-	 * Set version of the document
-	 * 
-	 * @param version
-	 */
-	public void setVersion(String version) {
-		dom.getDocumentElement().setAttribute("version", version);
-	}
+    /**
+     * Set version of the document
+     * 
+     * @param version
+     */
+    public void setVersion(String version) {
+        dom.getDocumentElement().setAttribute("version", version);
+    }
 }
